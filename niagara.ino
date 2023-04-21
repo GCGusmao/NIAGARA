@@ -34,6 +34,8 @@ int buttonState = 0;  // variable for reading the pushbutton status
 int cont = 0;
 int replays = quant_replays+1;
 
+unsigned long timeold;
+
 void setup() {
   // initialize the LED pin as an output:
   pinMode(ledPin, OUTPUT);
@@ -44,6 +46,21 @@ void setup() {
 }
 
 void loop() {
+
+
+    if (millis() - timeold >= 500)
+  {
+    //Desabilita interrupcao durante o calculo
+    detachInterrupt(1);
+    rpm = (60 * 1000 / pulsos_por_volta ) / (millis() - timeold) * pulsos;
+    timeold = millis();
+    pulsos = 0;
+    //Habilita interrupcao
+    attachInterrupt(1, contador, FALLING);
+  }
+
+
+
   // read the state of the pushbutton value:
 
   buttonState = digitalRead(buttonPin);
