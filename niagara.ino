@@ -1,96 +1,96 @@
 /*
-  Button
+  State change detection (edge detection)
 
-  Turns on and off a light emitting diode(LED) connected to digital pin 13,
-  when pressing a pushbutton attached to pin 2.
+  Often, you don't need to know the state of a digital input all the time, but
+  you just need to know when the input changes from one state to another.
+  For example, you want to know when a button goes from OFF to ON. This is called
+  state change detection, or edge detection.
+
+  This example shows how to detect when a button or button changes from off to on
+  and on to off.
 
   The circuit:
-  - LED attached from pin 13 to ground through 220 ohm resistor
   - pushbutton attached to pin 2 from +5V
-  - 10K resistor attached to pin 2 from ground
+  - 10 kilohm resistor attached to pin 2 from ground
+  - LED attached from pin 13 to ground through 220 ohm resistor (or use the
+    built-in LED on most Arduino boards)
 
-  - Note: on most Arduinos there is already an LED on the board
-    attached to pin 13.
-
-  created 2005
-  by DojoDave <http://www.0j0.org>
+  created  27 Sep 2005
   modified 30 Aug 2011
   by Tom Igoe
 
   This example code is in the public domain.
 
-  https://www.arduino.cc/en/Tutorial/BuiltInExamples/Button
+  https://www.arduino.cc/en/Tutorial/BuiltInExamples/StateChangeDetection
 */
 
-// constants won't change. They're used here to set pin numbers:
-const int buttonPin = 2;  // the number of the pushbutton pin
-const int ledPin = 5;    // the number of the LED pin
-const int tempo_on = 30000; //TEMPO LIGADA DURANTE CADA CICLO, EM MILLISSECONDS
-const int intervalo_reciclo = 60; //TEMPO ENTRE CADA CICLO, EM SEGUNDOS
-const int quant_replays = 10; //QUANTIDADE DE VEZES QUE ELE FARÁ O RECLICLO
+// this constant won't change:
+const int buttonPin = 2;  // the pin that the pushbutton is attached to
+const int ledPin = 5;    // the pin that the LED is attached to
 
-// variables will change:
-int buttonState = 0;  // variable for reading the pushbutton status
-int cont = 0;
-int replays = quant_replays+1;
-
-unsigned long timeold;
+// Variables will change:
+int buttonPushCounter = 0;  // counter for the number of button presses
+int buttonState = 0;        // current state of the button
+int lastButtonState = 0;    // previous state of the button
+int state = 0;    // previous state of the button
+int cont = 0;    // previous state of the button
 
 void setup() {
-  // initialize the LED pin as an output:
-  pinMode(ledPin, OUTPUT);
-  // initialize the pushbutton pin as an input:
+  // initialize the button pin as a input:
   pinMode(buttonPin, INPUT);
-
-    Serial.begin(9600);
+  // initialize the LED as an output:
+  pinMode(ledPin, OUTPUT);
+  // initialize serial communication:
+  Serial.begin(9600);
 }
 
+
 void loop() {
-
-
-    if (millis() - timeold >= 500)
-  {
-    //Desabilita interrupcao durante o calculo
-    detachInterrupt(1);
-    rpm = (60 * 1000 / pulsos_por_volta ) / (millis() - timeold) * pulsos;
-    timeold = millis();
-    pulsos = 0;
-    //Habilita interrupcao
-    attachInterrupt(1, contador, FALLING);
-  }
-
-
-
-  // read the state of the pushbutton value:
-
+  // read the pushbutton input pin:
   buttonState = digitalRead(buttonPin);
 
-  //delay(5000);
-
-  Serial.print("cont = "); // Imprime na tela
-  Serial.println(cont); // Imprime na tela
-
-  // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
-  if (buttonState == HIGH) {
-    // turn LED on:
-    replays = 0;
-    digitalWrite(ledPin, LOW);
-    delay(tempo_on*2);
-    digitalWrite(ledPin, HIGH);
-    delay(5000);
-  } else {
-          if (replays < quant_replays){
-                cont = cont+1;
-        if (cont > intervalo_reciclo){
-        digitalWrite(ledPin, LOW);
-        cont = 0;
-        replays = replays+1;
-        delay(tempo_on);
-        digitalWrite(ledPin, HIGH);
-      }
+  // compare the buttonState to its previous state
+  if (buttonState != lastButtonState) {
+    // if the state has changed, increment the counter
+    if (buttonState == HIGH) {
+      // if the current state is HIGH then the button went from off to on:
+      buttonPushCounter++;
+      state = 1;
+      Serial.println("on");
+      Serial.print("number of button pushes: ");
+      Serial.println(buttonPushCounter);
+      Serial.print("number of cont pushes: ");
+      Serial.println(cont);
+    } else {
+      // if the current state is LOW then the button went from on to off:
+      Serial.println("off");
+      cont = 1;
+      state = 0;
     }
-    // turn LED off:
+    // Delay a little bit to avoid bouncing
+    delay(50);
+  }
+  // save the current state as the last state, for next time through the loop
+  lastButtonState = buttonState;
+
+
+  // turns on the LED every four button pushes by checking the modulo of the
+  // button push counter. the modulo function gives you the remainder of the
+  // division of two numbers:
+  if (state == 1) {
+    digitalWrite(ledPin, LOW);
+    Serial.println("esperando...");
+    delay(15000); //VALOR QUE O MOTOR FICA LIGADO APOS RECEBER UM SINAL
+    Serial.println("sai da espera!");
+  } else {
     digitalWrite(ledPin, HIGH);
-        delay(1000);
+              if(cont >= 1){
+                while (cont < 500){ //VALOR QUE O SISTEMA ESPERA APOS O SINAL IR PARA LOW
+        cont++;
+              Serial.print("number of cont pushes: ");
+      Serial.println(cont);
+      }
+      cont = 0;
+              }
   }
 }
