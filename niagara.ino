@@ -25,66 +25,55 @@
 // constants won't change. They're used here to set pin numbers:
 const int buttonPin = 2;  // the number of the pushbutton pin
 const int ledPin = 5;    // the number of the LED pin
-const int tempo_on = 10000; //TEMPO LIGADA DURANTE CADA CICLO, EM MILLISSECONDS
-const int intervalo_reciclo = 10; //TEMPO ENTRE CADA CICLO, EM SEGUNDOS
-const int quant_replays = 3; //QUANTIDADE DE VEZES QUE ELE FARÁ O RECLICLO
+const int tempo_on = 30000; //TEMPO LIGADA DURANTE CADA CICLO, EM MILLISSECONDS
+const int intervalo_reciclo = 60; //TEMPO ENTRE CADA CICLO, EM SEGUNDOS
+const int quant_replays = 10; //QUANTIDADE DE VEZES QUE ELE FARÁ O RECLICLO
 
 // variables will change:
 int buttonState = 0;  // variable for reading the pushbutton status
-
 int cont = 0;
-
-int replays = 0;
+int replays = quant_replays+1;
 
 void setup() {
   // initialize the LED pin as an output:
   pinMode(ledPin, OUTPUT);
   // initialize the pushbutton pin as an input:
   pinMode(buttonPin, INPUT);
-  Serial.begin(9600);
+
+    Serial.begin(9600);
 }
 
 void loop() {
+  // read the state of the pushbutton value:
 
   buttonState = digitalRead(buttonPin);
 
-  Serial.println("Iniciando o sistema..."); // Imprime na tela
-    Serial.print("cont = "); // Imprime na tela
+  //delay(5000);
+
+  Serial.print("cont = "); // Imprime na tela
   Serial.println(cont); // Imprime na tela
-  Serial.print("replays = "); // Imprime na tela
-  Serial.println(replays); // Imprime na tela
-  Serial.print("buttonState = "); // Imprime na tela
-  Serial.println(buttonState); // Imprime na tela
-  Serial.println(""); // Imprime na tela
-  // read the state of the pushbutton value:
-  cont = cont++;
-  delay(10000);
 
   // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
   if (buttonState == HIGH) {
     // turn LED on:
+    replays = 0;
     digitalWrite(ledPin, LOW);
-    //cont = 0;
-    //replays = 0;
-    delay(tempo_on); /////// VALOR DEFINIDO PARA TEMPO LIGADA A MÁQUINA
+    delay(tempo_on*2);
+    digitalWrite(ledPin, HIGH);
+    delay(5000);
   } else {
-      if (replays < quant_replays){
+          if (replays < quant_replays){
+                cont = cont+1;
         if (cont > intervalo_reciclo){
         digitalWrite(ledPin, LOW);
         cont = 0;
-        replays = replays++;
+        replays = replays+1;
         delay(tempo_on);
         digitalWrite(ledPin, HIGH);
       }
     }
-        // turn LED off:
+    // turn LED off:
     digitalWrite(ledPin, HIGH);
+        delay(1000);
   }
-  Serial.print("cont = "); // Imprime na tela
-  Serial.println(cont); // Imprime na tela
-  Serial.print("replays = "); // Imprime na tela
-  Serial.println(replays); // Imprime na tela
-  Serial.print("buttonState = "); // Imprime na tela
-  Serial.println(buttonState); // Imprime na tela
-  Serial.println(""); // Imprime na tela
 }
