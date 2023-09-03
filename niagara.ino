@@ -1,45 +1,90 @@
 /*
   State change detection (edge detection)
-
-  Often, you don't need to know the state of a digital input all the time, but
-  you just need to know when the input changes from one state to another.
-  For example, you want to know when a button goes from OFF to ON. This is called
-  state change detection, or edge detection.
-
-  This example shows how to detect when a button or button changes from off to on
-  and on to off.
-
-  The circuit:
-  - pushbutton attached to pin 2 from +5V
-  - 10 kilohm resistor attached to pin 2 from ground
-  - LED attached from pin 13 to ground through 220 ohm resistor (or use the
-    built-in LED on most Arduino boards)
-
-  created  27 Sep 2005
-  modified 30 Aug 2011
-  by Tom Igoe
-
-  This example code is in the public domain.
-
-  https://www.arduino.cc/en/Tutorial/BuiltInExamples/StateChangeDetection
 */
 
 // this constant won't change:
 const int buttonPin = 2;  // the pin that the pushbutton is attached to
-const int ledPin = 5;    // the pin that the LED is attached to
+const int ledPin = 6;    // the pin that the LED is attached to
+const int relayPin = 5;    // the pin that the Relat Module is attached to
+unsigned long previousMillis = 0; //time that the LED state was last changed
+unsigned long previousMillis_check = 0; //time that the LED state was last changed
 
 // Variables will change:
 int buttonPushCounter = 0;  // counter for the number of button presses
 int buttonState = 0;        // current state of the button
 int lastButtonState = 0;    // previous state of the button
 int state = 0;    // previous state of the button
-int cont = 0;    // previous state of the button
+int state_inicial_pump = 0;    // state of the function initial_pump
+int disable_inicial = 0;
+int state_pump = 0;    // state of the function initial_pump
+int flag_millis = 0;
+int flag_check = 0;
+unsigned long cont = 10000;    // previous state of the button
+
+
+void initial_pump(){
+  flag_millis = 1;
+    if (millis() - previousMillis > 5000) { //3000ms or 3 seconds since last event
+    digitalWrite(relayPin, LOW);
+  }
+    if (millis() - previousMillis > 10000) { //3000ms or 3 seconds since last event
+    digitalWrite(relayPin, HIGH);
+  }
+    if (millis() - previousMillis > 15000) { //3000ms or 3 seconds since last event
+    digitalWrite(relayPin, LOW);
+    previousMillis = millis(); // save time that event last occurred
+    state_inicial_pump = 0;
+    state_pump = 1;
+    disable_inicial = 1;
+  }
+}
+
+void pump(){
+  if (state != 0) {
+    digitalWrite(relayPin, LOW);
+    cont = ((millis() - previousMillis) + 10000);
+  }
+
+    if (millis() - previousMillis > cont) { //3000ms or 3 seconds since last event
+    digitalWrite(relayPin, HIGH);
+    previousMillis = millis(); // save time that event last occurred
+    cont = 10000;
+    state_pump = 0;
+    state_inicial_pump = 0;
+    flag_millis = 0;
+    disable_inicial = 0;
+  }
+}
+
+void check_pump(){
+    if (millis() - previousMillis_check > 300000) { //3000ms or 3 seconds since last event
+    disable_inicial = 1;
+    digitalWrite(relayPin, LOW);
+    if (buttonState == HIGH) {
+      flag_check++;
+    }
+    if (millis() - previousMillis_check > 303000) { //3000ms or 3 seconds since last event
+    if (flag_check > 10) {
+      state_pump = 1;
+    } else {
+      digitalWrite(relayPin, HIGH);
+    }
+    previousMillis_check = millis();
+    state_inicial_pump = 0;
+    disable_inicial = 0;
+    flag_check = 0;
+  }
+  }
+}
 
 void setup() {
   // initialize the button pin as a input:
   pinMode(buttonPin, INPUT);
   // initialize the LED as an output:
   pinMode(ledPin, OUTPUT);
+  // initialize the Relay as an output:
+  pinMode(relayPin, OUTPUT);
+  digitalWrite(relayPin, HIGH);
   // initialize serial communication:
   Serial.begin(9600);
 }
@@ -53,18 +98,9 @@ void loop() {
   if (buttonState != lastButtonState) {
     // if the state has changed, increment the counter
     if (buttonState == HIGH) {
-      // if the current state is HIGH then the button went from off to on:
-      buttonPushCounter++;
       state = 1;
-      Serial.println("on");
-      Serial.print("number of button pushes: ");
-      Serial.println(buttonPushCounter);
-      Serial.print("number of cont pushes: ");
-      Serial.println(cont);
     } else {
       // if the current state is LOW then the button went from on to off:
-      Serial.println("off");
-      cont = 1;
       state = 0;
     }
     // Delay a little bit to avoid bouncing
@@ -78,19 +114,44 @@ void loop() {
   // button push counter. the modulo function gives you the remainder of the
   // division of two numbers:
   if (state == 1) {
-    digitalWrite(ledPin, LOW);
-    Serial.println("esperando...");
-    delay(15000); //VALOR QUE O MOTOR FICA LIGADO APOS RECEBER UM SINAL
-    Serial.println("sai da espera!");
-  } else {
     digitalWrite(ledPin, HIGH);
-              if(cont >= 1){
-                while (cont < 500){ //VALOR QUE O SISTEMA ESPERA APOS O SINAL IR PARA LOW
-        cont++;
-              Serial.print("number of cont pushes: ");
-      Serial.println(cont);
-      }
-      cont = 0;
-              }
+    state_inicial_pump = 1;
+  } else {
+    digitalWrite(ledPin, LOW);
   }
+  if (state_inicial_pump == 1 && disable_inicial == 0) {
+    initial_pump();
+    previousMillis_check = millis();
+  }
+  if (state_pump == 1) {
+    pump();
+    previousMillis_check = millis();
+  }
+
+  if ((millis() - previousMillis_check) > 300000) {
+    check_pump();
+  }
+
+  if (flag_millis == 0) {
+        previousMillis = millis(); // save time that event last occurred
+  }
+
+    Serial.print("millis: ");
+    Serial.print(millis());
+    Serial.print(" || previousMillis: ");
+    Serial.print(previousMillis);
+    Serial.print(" || Value: ");
+    Serial.print(millis() - previousMillis);
+    Serial.print(" || flag_millis: ");
+    Serial.print(flag_millis);
+    Serial.print(" || cont: ");
+    Serial.print(cont);
+    Serial.print(" || previousMillis_check: ");
+    Serial.print(previousMillis_check);
+    Serial.print(" || Value2: ");
+    Serial.print(millis() - previousMillis_check);
+    Serial.print(" || Check: ");
+    Serial.println(flag_check);
+
+
 }
