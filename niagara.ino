@@ -57,14 +57,14 @@ void pump(){
 }
 
 void check_pump(){
-    if (millis() - previousMillis_check > 300000) { //3000ms or 3 seconds since last event
+    if (millis() - previousMillis_check > 200000) { //3000ms or 3 seconds since last event
     disable_inicial = 1;
     digitalWrite(relayPin, LOW);
     if (buttonState == HIGH) {
-      flag_check++;
+      flag_check++;  // This flag will verify if was water inside the system.
     }
-    if (millis() - previousMillis_check > 303000) { //3000ms or 3 seconds since last event
-    if (flag_check > 10) {
+    if (millis() - previousMillis_check > 203000) { //3000ms or 3 seconds since last event
+    if (flag_check > 8) {  //  If flag_check is greater than X, active the system. This is the sensibility of the checker. The standard value is 10.
       state_pump = 1;
     } else {
       digitalWrite(relayPin, HIGH);
